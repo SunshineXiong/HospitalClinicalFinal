@@ -104,5 +104,3 @@ def retrieve_patient_data(patients, patient_id, output_file):
                 print("Error writing to file: "+ str(e))
         else:
             print("Patient with ID "+ patient_id +" not found.")
-
-
