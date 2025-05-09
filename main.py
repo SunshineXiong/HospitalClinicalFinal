@@ -1,17 +1,19 @@
 import tkinter as tk
 
 from patient import Patient
-from visit import Visit, Note
+from visit import Visit
+from note import Note
 from user import User
 
 from tkinter import messagebox, simpledialog, ttk
 from loadingFiles import load_user, load_patients, load_notes
 from add_patient import add_patient_data
-from remove import remove_patient_data
-from retrieve import retrieve_patient_data
+from removing_patient import remove_patient_data
+from retrieving_patient import retrieve_patient_data
 from countvisits import counting_patient_visits
 from view_notes import view_note
 from stats import generate_management_statistics
+from logging_activity import log_usage
 import datetime
 import csv
 
@@ -19,9 +21,9 @@ class HospitalUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Hospital Clinical System")
-        self.username = load_user('./PA3_credentials.csv')
-        self.patients_data = load_patients('./PA3_data.csv')
-        self.notes_data = load_notes('PA3_notes.csv', 'PA3_data.csv', self.patients_data)
+        self.username = load_user('Credentials.csv')
+        self.patients_data = load_patients('Patient_data.csv')
+        self.notes_data = load_notes('Notes.csv', 'Patient_data.csv', self.patients_data)
 
         self.username_var = tk.StringVar()
         self.password_var = tk.StringVar()
@@ -45,8 +47,11 @@ class HospitalUI:
         if user.authenticate(username, password):
             self.root.withdraw()
             self.main_menu(user)
+            
+            log_usage(username, user.role, "Login", "Success")
         else:
             messagebox.showerror("Login Failed. ", "Invalid username or password.")
+            log_usage(username, "Unknown", "Login", "Failed")
 
     def main_menu(self, user):
         role = user.role.lower()
@@ -62,9 +67,11 @@ class HospitalUI:
             tk.Button(menu, text = "Retrieve Patient", command=self.retrieve_patient_ui).pack()
             tk.Button(menu, text = "Count Visits", command=lambda: counting_patient_visits(self.patients_data)).pack()
             tk.Button(menu, text = "View Notes by Date", command=self.view_note_ui).pack()
+            tk.Button(menu, text = "Logout", command = lambda: [menu.destroy(), self.root.deiconify()]).pack(pady = 10)
 
         elif role == 'admin':
             tk.Button(menu, text = "Count Visits", command=lambda: counting_patient_visits(self.patients_data)).pack()
+            tk.Button(menu, text = "Logout", command = lambda: [menu.destroy(), self.root.deiconify()]).pack(pady = 10)
 
         elif role == 'management':
             tk.Button(menu, text = "Generate Statistics", command = lambda: self.show_message(generate_management_statistics(self.patients_data))).pack()
@@ -79,36 +86,68 @@ class HospitalUI:
 # create window for adding patient
     def add_patient_ui(self):
         new_window = tk.Toplevel()
-        new_window.title("Add Patient")
+        new_window.title("Check for Patient")
 
-        entries = ["Patient ID", "Gender", "Race", "Ethnicity", "Age", "Zip Code", "Insurance", "Complaint"]
+        tk.Label(new_window, text = "Enter Patient ID").pack()
+        patientID_entry = tk.Entry(new_window)
+        patientID_entry.pack()
+        
 
-        self.patient_entries ={}
+        def patient_checker():
+            patient_id = patientID_entry.get()
+                
+            if patient_id in self.patients_data:
+                messagebox.showinfo("Patient Found", "Adding visit for existing patient")
+                existing_patient = self.patients_data[patient_id]
 
-        for entry in entries:
+                ask_info(patient_id, existing_patient)     
+            else: 
+                messagebox.showinfo("New Patient", "Creating new patient record")
+                ask_info(patient_id, None)
+
+            new_window.destroy()
             
-            tk.Label(new_window, text = entry).pack()
-            info_entry = tk.Entry(new_window)
-            info_entry.pack()
-            self.patient_entries[entry] = info_entry
+        tk.Button(new_window, text="Check Patient", command = patient_checker).pack()
+
+        def ask_info(patient_id, existing_patient):
+            form_window = tk.Toplevel()
+            form_window.title("Add Visitation Details:")
+
+            if existing_patient:
+                info_prompts = [ 'Visit_time', 'Visit_department', 'Chief_complaint', 'Note_ID', 'Note_type', 'Note_text']
+                
+            else: 
+                info_prompts = ['Gender', 'Race',  'Age',  'Ethnicity',  'Zip_code',  'Insurance',  'Visit_time',  'Visit_department',  'Chief_complaint',  'Note_ID',  'Note_type',  'Note_text']
+            
+            inputs = {}
+            for prompt in info_prompts:
+                tk.Label(form_window, text = prompt).pack()
+                info_entry = tk.Entry(form_window)
+                info_entry.pack()
+                inputs[prompt] = info_entry
+
+            def check_non_empty_inputs():
+                for entry in inputs.values():
+                    if not entry.get().strip(): 
+                        return False 
+                return True
+            
+            def submit():
+                check_non_empty_inputs()
+                try:
+                    data = {}                    
+                    for entries in info_prompts:
+                        value = inputs[entries].get()
+                        data[entries] = value
+                    add_patient_data(self.patients_data, patient_id, data)
+                    messagebox.showinfo("Success!","Patient added.")
+                    form_window.destroy()
+
+                except Exception as e: 
+                    messagebox.showerror("Error", str(e))
+
+            tk.Button(form_window, text = "Submit", command = submit).pack()
         
-        tk.Button(new_window, text = "Add", command = lambda: self.call_add_patient(info_entry.get())).pack()
-
-    def call_add_patient(self, patientID):
-        values = {key: entry.get() for key, entry in self.patient_entries.items()}
-
-        patientID = values["Patient ID"]
-        gender = values["Gender"]
-        race = values["Race"]
-        ethnicity = values["Ethnicity"]
-        age = values["Age"]
-        zip_code = values["Zip Code"]
-        insurance = values["Insurance"]
-        complaint = values["Complaint"]
-        
-        add_patient_data(self.patients_data, patientID, self.notes_data, gender, race, ethnicity, age, zip_code, insurance, complaint)
-        messagebox.showinfo("Success", "Patient "+ {values['Patient ID']} + " added.")
-
 
 # create window for removing patient
     def remove_patient_ui(self):
@@ -122,7 +161,7 @@ class HospitalUI:
         tk.Button(new_window, text = "Remove", command = lambda: self.call_remove_patient(patientID_entry.get(), new_window)).pack()
 
     def call_remove_patient(self, patientID, new_window):
-        if remove_patient_data(self.patients_data, patientID, 'Final_data.csv'):
+        if remove_patient_data(self.patients_data, patientID, 'Patient_data.csv', 'Notes.csv'):
             messagebox.showinfo("Removed", "Patient ID " + patientID + " data has been successfully removed from the file.")
             new_window.destroy()
         else:
@@ -147,30 +186,18 @@ class HospitalUI:
             details_window = tk.Toplevel()
             details_window.title("Patient " + patientID + " Details!")
             if patient.records: 
-                for visit in patient.records:
-                    visit_frame = tk.Frame(details_window)
-                    visit_frame.pack(pady = 5)
-                    
-                    tk.Label(visit_frame, text = ("Visit ID: " + visit.visit_id)).pack()
-                    tk.Label(visit_frame, text = ("Department: " + visit.department)).pack()
-                    tk.Label(visit_frame, text = ("Date of Visit: " + visit.visit_time)).pack()
-                    tk.Label(visit_frame, text = ("Chief Complaint: " + visit.chief_complaint)).pack()
-                    tk.Label(visit_frame, text = ("Gender: "+ visit.gender)).pack()
-                    tk.Label(visit_frame, text = ("Race: " + visit.race)).pack()
-                    tk.Label(visit_frame, text = ("Ethnicity: " + visit.ethnicity)).pack()
-                    tk.Label(visit_frame, text = ("Age: " + str(visit.age))).pack()
-                    tk.Label(visit_frame, text = ("Zip Code: "+ visit.zip_code)).pack()
-                    tk.Label(visit_frame, text = ("Insurance: " + visit.insurance)).pack()
-
-                    if visit.notes:
-                        for note in visit.notes:
-                            tk.Label(visit_frame, text = ("Note ID: " + str(note.note_id) + " - " + note.note_text)).pack()
-
-                    # add horizontal line between visits 
-                    ttk.Separator(details_window, orient = 'horizontal').pack(fill = 'x', pady = 10)
-
+                info = patient.records[0]
+                info_frame = tk.Frame(details_window)
+                info_frame.pack(pady = 10)
+                
+                tk.Label(info_frame, text = ("Gender: "+ info.gender)).pack()
+                tk.Label(info_frame, text = ("Race: " + info.race)).pack()
+                tk.Label(info_frame, text = ("Ethnicity: " + info.ethnicity)).pack()
+                tk.Label(info_frame, text = ("Age: " + str(info.age))).pack()
+                tk.Label(info_frame, text = ("Zip Code: "+ info.zip_code)).pack()
+                tk.Label(info_frame, text = ("Insurance: " + info.insurance)).pack()
             else:
-                tk.Label(details_window, text = ("No visits recorded for this patient.")).pack()
+                tk.Label(details_window, text = ("No information recorded for this patient.")).pack()
         else: 
             messagebox.showinfo("Error", "Patient " + patientID + " not found.")
     
@@ -204,7 +231,6 @@ class HospitalUI:
             new_window.destroy()
 
         tk.Button(new_window, text = "View Notes", command = show_notes).pack()
-
 
         
 if __name__ == "__main__":
