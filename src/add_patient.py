@@ -122,13 +122,6 @@ def generate_unique_visitIDS(patients_data):
         
     return str(new_id).zfill(5) 
 
-def date_checker():        
-    # Check basic format YYYY-MM-DD
-    if len(input_date) == 10 and input_date[4] == '-' and input_date[7] == '-':
-        return input_date
-    else:
-        print("Invalid date format. Please enter the date as YYYY-MM-DD.\n")
-
 def load_info_preexisting_Patients(patient_id):
     with open('Patient_data.csv', 'r') as csvfile: 
         reader = csv.DictReader(csvfile)
