@@ -188,16 +188,18 @@ class HospitalUI:
             if patient.records: 
                 info = patient.records[0]
                 info_frame = tk.Frame(details_window)
-                info_frame.pack(pady = 10)
+                info_frame.pack(pady = 15)
                 
+                tk.Label(info_frame, text = ("PATIENT ID: "+ patientID)).pack()
                 tk.Label(info_frame, text = ("Gender: "+ info.gender)).pack()
                 tk.Label(info_frame, text = ("Race: " + info.race)).pack()
                 tk.Label(info_frame, text = ("Ethnicity: " + info.ethnicity)).pack()
                 tk.Label(info_frame, text = ("Age: " + str(info.age))).pack()
                 tk.Label(info_frame, text = ("Zip Code: "+ info.zip_code)).pack()
                 tk.Label(info_frame, text = ("Insurance: " + info.insurance)).pack()
+
             else:
-                tk.Label(details_window, text = ("No information recorded for this patient.")).pack()
+                tk.Label(details_window, text = ("No visits recorded for this patient.")).pack()
         else: 
             messagebox.showinfo("Error", "Patient " + patientID + " not found.")
     
