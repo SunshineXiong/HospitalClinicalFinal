@@ -10,8 +10,7 @@ Features:
 - Logs user activties (successful and failed attempts with logins and actions) 
 
 Running the Program:
-1. Create environment (Anaconda recommended) : conda create -- name
-2. Run command line: python main.py
+2. Run command line in Terminal: python main.py
 
 Notes: 
 - Data is stored in csv files (patients_data, credentials, notes, usagelog)
