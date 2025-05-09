@@ -45,6 +45,7 @@ class HospitalUI:
         user = User(username, password)
         
         if user.authenticate(username, password):
+            self.user = user # store user object 
             self.root.withdraw()
             self.main_menu(user)
             
@@ -70,7 +71,7 @@ class HospitalUI:
             tk.Button(menu, text = "Logout", command = lambda: [menu.destroy(), self.root.deiconify()]).pack(pady = 10)
 
         elif role == 'admin':
-            tk.Button(menu, text = "Count Visits", command=lambda: counting_patient_visits(self.patients_data)).pack()
+            tk.Button(menu, text = "Count Visits", command=lambda: counting_patient_visits(self.patients_data, self.user)).pack()
             tk.Button(menu, text = "Logout", command = lambda: [menu.destroy(), self.root.deiconify()]).pack(pady = 10)
 
         elif role == 'management':
@@ -131,6 +132,7 @@ class HospitalUI:
                     if not entry.get().strip(): 
                         return False 
                 return True 
+                
             def date_checker(date):        
                 try: # Check basic format YYYY-MM-DD
                     if len(date) == 10 and date[4] == '-' and date[7] == '-':
@@ -139,17 +141,20 @@ class HospitalUI:
                         print("Invalid date format. Please enter the date as YYYY-MM-DD.\n")
                 except ValueError:
                     return False
+
                     
             def submit():
                 if not check_non_empty_inputs():
                     messagebox.showerror("Error", "All fields must be filled.")
+                    log_usage(self.user.username, self.user.get_role(), "ADD Patient", "Failed")
                     return
 
                 visit_date = inputs['Visit_time'].get().strip()
                 if not date_checker(visit_date):
-                    messagebox.showerror("Invalid date", "Visit Time must be in YYYY-MM-DD")
+                    messagebox.showerror("Invalid date", "Visit Time must be in YYYY-MM-DD")                    
+                    log_usage(self.user.username, self.user.get_role(), "ADD Patient", "Failed")
+
                     return
-                    
                 try:
                     data = {}                    
                     for entries in info_prompts:
@@ -158,6 +163,7 @@ class HospitalUI:
                     add_patient_data(self.patients_data, patient_id, data)
                     messagebox.showinfo("Success!","Patient added.")
                     form_window.destroy()
+                    log_usage(self.user.username, self.user.role, "ADD Patient", "Success")
 
                 except Exception as e: 
                     messagebox.showerror("Error", str(e))
@@ -179,9 +185,12 @@ class HospitalUI:
     def call_remove_patient(self, patientID, new_window):
         if remove_patient_data(self.patients_data, patientID, 'Patient_data.csv', 'Notes.csv'):
             messagebox.showinfo("Removed", "Patient ID " + patientID + " data has been successfully removed from the file.")
+            log_usage(self.user.username, self.user.role, "REMOVE Patient", "Success")
+
             new_window.destroy()
         else:
             messagebox.showinfo("Error", "Patient "+ patientID + " could not be removed.")
+            log_usage(self.user.username, self.user.role, "REMOVE Patient", "Failed")
 
 
 # create window for retrieving patient
@@ -213,12 +222,13 @@ class HospitalUI:
                 tk.Label(info_frame, text = ("Age: " + str(info.age))).pack()
                 tk.Label(info_frame, text = ("Zip Code: "+ info.zip_code)).pack()
                 tk.Label(info_frame, text = ("Insurance: " + info.insurance)).pack()
-
+                log_usage(self.user.username, self.user.role, "RETRIEVE Patient", "Success")
             else:
                 tk.Label(details_window, text = ("No visits recorded for this patient.")).pack()
         else: 
             messagebox.showinfo("Error", "Patient " + patientID + " not found.")
-    
+            log_usage(self.user.username, self.user.role, "RETRIEVE Patient", "Failed")
+            
 # create window for viewing patient notes
     def view_note_ui(self):
         new_window = tk.Toplevel()
@@ -243,11 +253,12 @@ class HospitalUI:
             if notes:
                 for note_text in notes:
                     tk.Label(notes_display, text=note_text, justify = "left", anchor = "w", wraplength = 50).pack(padx = 10, pady = 5)
+                    log_usage(self.user.username, self.user.role, "VIEW Notes", "Success")
             else:
                 tk.Label(notes_display, text = "No notes found.").pack(pady = 10)
-
+                log_usage(self.user.username, self.user.role, "VIEW Notes", "Failed")
             new_window.destroy()
-
+            
         tk.Button(new_window, text = "View Notes", command = show_notes).pack()
 
         
