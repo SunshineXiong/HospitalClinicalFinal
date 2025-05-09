@@ -1,7 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from logging_activity import log_usage
 
-def generate_management_statistics(patients):
+def generate_management_statistics(patients, user):
     print("\nGenerating key statistics reports...\n")
 
     # Collect all visit data in a list of dictionaries
@@ -62,5 +63,6 @@ def generate_management_statistics(patients):
         plt.tight_layout()
         plt.savefig("visits_by_"+ category +"_yearly.png")  # Save the plot
         plt.show()
+    log_usage(user.username, user.role, "GENERATING statistics", "Success")
 
     print("\nManagement statistics generated and saved as figures.\n")
