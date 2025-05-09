@@ -7,4 +7,12 @@ Features:
 - Add, Remove, Retrieve patient data
 - Track patient visits and view associated notes
 - Generate management statistics
-- Logs user activties (successful and failed logins) 
+- Logs user activties (successful and failed attempts with logins and actions) 
+
+Running the Program:
+1. Create environment (Anaconda recommended) : conda create -- name
+2. Run command line: python main.py
+
+Notes: 
+- Data is stored in csv files (patients_data, credentials, notes, usagelog)
+- Ensure all files are in the same folder as main.py
