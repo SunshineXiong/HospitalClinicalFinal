@@ -10,8 +10,15 @@ Features:
 - Logs user activties (successful and failed attempts with logins and actions) 
 
 Running the Program:
-2. Run command line in Terminal: python main.py
+  Requirements:
+    - Python 3.x
+    - pandas
+    - numpy
+    - matplotlib
+  Setting Up via Terminal
+  1. pip install pandas numpy matplotlib (install dependencies) 
+  2. python main.py (run the program)
 
 Notes: 
-- Data is stored in csv files (patients_data, credentials, notes, usagelog)
+- Data is stored in csv files (Patient_data, Credentials, Notes, usagelog)
 - Ensure all files are in the same folder as main.py
