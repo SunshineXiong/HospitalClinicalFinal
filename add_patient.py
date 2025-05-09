@@ -3,96 +3,87 @@ import csv
 import os
 
 from patient import Patient
-from visit import Visit, Note
+from visit import Visit
+from note import Note
 from loadingFiles import load_user, load_notes, load_patients
 
 # ADD MODE 
-def add_patient_data(patients_data, patient_id, note_data):
+def add_patient_data(patients_data, patient_id, input_data):
+    try: 
+        mapped_data = {'Patient_ID': patient_id, 
+                       'Visit_ID': generate_unique_visitIDS(patients_data), 
+                       'Visit_time': input_data['Visit_time'], 
+                       'Visit_department': input_data['Visit_department'], 
+                       'Gender': input_data.get('Gender', 'UNKNOWN'),
+                       'Race': input_data.get('Race', 'UNKNOWN'), 
+                       'Ethnicity': input_data.get('Ethnicity', 'UNKNOWN'), 
+                       'Age': input_data.get('Age', 'UNKNOWN'), 
+                       'Zip_code': input_data.get('Zip_code', 'UNKNOWN'), 
+                       'Insurance': input_data.get('Insurance', 'UNKNOWN'), 
+                       'Chief_complaint': input_data['Chief_complaint'], 
+                       'Note_ID': input_data['Note_ID'], 
+                       'Note_type': input_data['Note_type']
+                      }
+    except Exception as e:
+        print("Error: " + str(e))
+        return
+        
     if patient_id not in patients_data:
-        race = get_non_empty_input("Enter race: ")
-        gender = get_non_empty_input("Enter gender: ")
-        ethnicity = get_non_empty_input("Enter ethnicity: ")
-    # Handle missing or invalid Age values
-        while True:
-            age_input = input("Enter age: ").strip()
-            if age_input.isdigit():
-                age = int(age_input)
-                break
-            else:
-                print("Invalid input. Please enter a valid number for age.")        
-        zip_code = get_non_empty_input("Enter zip code: ")
-        insurance = get_non_empty_input("Enter insurance: ")
-    # Create new patient object and store
+    # Patient doesn't exist, create a new one
         patient = Patient(patient_id)
         patients_data[patient_id] = patient
-    else:
+    
+        gender = str(input_data['Gender'])
+        race = str(input_data['Race'])
+        ethnicity = str(input_data['Ethnicity'])
+        age = int(input_data['Age'])
+        zip_code = str(input_data['Zip_code'])
+        insurance = str(input_data['Insurance'])
+    else: 
         patient = patients_data[patient_id]
-        if patient.records:
-            first_visit = patient.records[0]
-            race = first_visit.race
-            gender = first_visit.gender
-            ethnicity = first_visit.ethnicity
-            age = first_visit.age
-            zip_code = first_visit.zip_code
-            insurance = first_visit.insurance
-        else:
-            # Fall back to prompting if no previous visits exist
-            race = get_non_empty_input("Enter race: ")
-            gender = get_non_empty_input("Enter gender: ")
-            ethnicity = get_non_empty_input("Enter ethnicity: ")
-            
-            while True:
-                age_input = int(input("Enter age: "))
-                if age_input.isdigit():
-                    age = int(age_input)
-                    break
-                else:
-                    print("Invalid input. Please enter a valid number for age.")   
-            
-            zip_code = get_non_empty_input("Enter zip code: ")
-            insurance = get_non_empty_input("Enter insurance: ")
-    
-#asks user for information about new visit details
-    print("Please enter visit details:")
-    visit_time = date_checker()
-    
-    visit_id = str(generate_unique_visitIDS(patients_data))  #Generate a unique Visit_ID 
-    print("Visit ID: " + visit_id)
-    
-    department = get_non_empty_input("Enter visit department: ")
-    chief_complaint = get_non_empty_input("Enter chief complaint: ")
+        information = load_info_preexisting_Patients(patient_id)
 
-    note_id = get_non_empty_input("Enter note ID: ")
-    note_type = get_non_empty_input("Enter note type: ")
-    note_text = get_non_empty_input("Enter note text: ")
-    
-#creates the visit visit
+        if information: 
+            race = str(information['Race'])            
+            gender = str(information['Gender'])
+            age = int(information['Age'])
+            ethnicity = str(information['Ethnicity'])
+            zip_code = str(information['Zip_code'])
+            insurance = str(information['Insurance'])
+        
+    visit_id = mapped_data['Visit_ID']
+    visit_time = mapped_data['Visit_time']
+    department = mapped_data['Visit_department']
+    chief_complaint = mapped_data['Chief_complaint']
+    note_id = mapped_data['Note_ID']
+    note_type = mapped_data['Note_type']
+    note_text = input_data['Note_text']
+
+#creates the visit and note objects
     new_visit = Visit(visit_id, visit_time, department, race, gender, ethnicity, age, insurance, zip_code, chief_complaint, note_id, note_type)
-
     new_note = Note(note_id=note_id, note_type=note_type, note_text=note_text)
-
-
-#adds visit to patient visit
+    
     patient.add_record(new_visit)
-    print("New visit added for Patient ID: " + patient_id)
+
+    #adds visit to patient visit
     new_visit.add_note(note_id=note_id, note_type=note_type, note_text=note_text)
 
-    
 #appends visit to CSV file
-    append_new_visit('PA3_data.csv', patient_id, new_visit)
+    append_new_visit('Patient_data.csv', patient_id, new_visit)
 
 #appends note to CSV file
-    append_new_note('PA3_Notes.csv', patient_id, new_note, new_visit)
+    append_new_note('Notes.csv', patient_id, new_note, new_visit)
     
+    print("New visit added for Patient ID: " + patient_id)
+    load_patients('Patient_data.csv')
 
-    return load_patients('PA3_data.csv')
 
-## 
 def append_new_visit(input_path, patient_id, new_visit):
     with open(input_path, 'a') as file:
         fileWrite=csv.writer(file)
+        
         for note in new_visit.notes:
-            fileWrite.writerow([patient_id, new_visit.visit_id, new_visit.visit_time, new_visit.department, new_visit.race, new_visit.gender, new_visit.ethnicity, new_visit.age, new_visit.insurance, new_visit.zip_code, new_visit.chief_complaint, note.note_id, note.note_type])
+            fileWrite.writerow([patient_id, new_visit.visit_id, new_visit.visit_time, new_visit.department,new_visit.gender, new_visit.race, new_visit.age, new_visit.ethnicity,  new_visit.zip_code, new_visit.insurance, new_visit.chief_complaint, note.note_id, note.note_type])
         print("\nNew visit data for Patient ID " + patient_id + " has been added successfully.")
 
 def append_new_note(input_path, patient_id, new_note,new_visit):
@@ -130,24 +121,25 @@ def generate_unique_visitIDS(patients_data):
         new_id += 1
         
     return str(new_id).zfill(5) 
-    # source: https://www.w3schools.com/python/ref_string_zfill.asp 
-    # will fill the visit id with leading 0s so that it asetheically match csv
 
-## this makes sure that when having users input during adding patients, it's not empty 
-def get_non_empty_input(prompt):
-    while True:
-        user_input = input(prompt)
-        if user_input:
-            return user_input
-        else:
-            print("Input cannot be empty. Please try again.")
+def date_checker():        
+    # Check basic format YYYY-MM-DD
+    if len(input_date) == 10 and input_date[4] == '-' and input_date[7] == '-':
+        return input_date
+    else:
+        print("Invalid date format. Please enter the date as YYYY-MM-DD.\n")
 
-def date_checker():
-    while True:
-        input_date = input("Enter date for visit (YYYY-MM-DD): ").strip()
-        
-        # Check basic format YYYY-MM-DD
-        if len(input_date) == 10 and input_date[4] == '-' and input_date[7] == '-':
-            return input_date
-        else:
-            print("Invalid date format. Please enter the date as YYYY-MM-DD.\n")
+def load_info_preexisting_Patients(patient_id):
+    with open('Patient_data.csv', 'r') as csvfile: 
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            if str(patient_id).strip() == str(row['Patient_ID']).strip():
+                return {
+                    'Gender': row['Gender'],
+                    'Race': row['Race'],
+                    'Ethnicity': row['Ethnicity'],
+                    'Age': row['Age'],
+                    'Zip_code': row['Zip_code'],
+                    'Insurance': row['Insurance']
+                }
+    return None
