@@ -6,8 +6,9 @@ from datetime import datetime
 from patient import Patient
 from visit import Visit
 from note import Note
+from logging_activity import log_usage
 
-def counting_patient_visits(patients_data):
+def counting_patient_visits(patients_data,user):
     date_window = tk.Toplevel()
     date_window.title("Enter date for Counting visits")
 
@@ -25,9 +26,10 @@ def counting_patient_visits(patients_data):
 
         if input_date:
             date_checker(input_date, date_window, patients_data)
+            log_usage(user.username, user.role, "COUNTING VISITS", "Success")
         else:
             messagebox.showerror("Invalid Input", "Please enter a valid date.")
-    
+            log_usage(user.username, user.role, "COUNTING VISITS", "Failed")
     tk.Button(date_window, text = "Submit", command = submit_date).pack()
     
 def date_checker(input_date, date_window, patients_data):
