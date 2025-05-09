@@ -66,7 +66,7 @@ class HospitalUI:
             tk.Button(menu, text = "Add Patient", command = self.add_patient_ui).pack()
             tk.Button(menu, text = "Remove Patient", command=self.remove_patient_ui).pack()
             tk.Button(menu, text = "Retrieve Patient", command=self.retrieve_patient_ui).pack()
-            tk.Button(menu, text = "Count Visits", command=lambda: counting_patient_visits(self.patients_data)).pack()
+            tk.Button(menu, text = "Count Visits", command=lambda: counting_patient_visits(self.patients_data, user)).pack()
             tk.Button(menu, text = "View Notes by Date", command=self.view_note_ui).pack()
             tk.Button(menu, text = "Logout", command = lambda: [menu.destroy(), self.root.deiconify()]).pack(pady = 10)
 
@@ -75,7 +75,7 @@ class HospitalUI:
             tk.Button(menu, text = "Logout", command = lambda: [menu.destroy(), self.root.deiconify()]).pack(pady = 10)
 
         elif role == 'management':
-            tk.Button(menu, text = "Generate Statistics", command = lambda: self.show_message(generate_management_statistics(self.patients_data))).pack()
+            tk.Button(menu, text = "Generate Statistics", command = lambda: self.show_message(generate_management_statistics(self.patients_data, user))).pack()
             tk.Button(menu, text = "Logout", command = lambda: [menu.destroy(), self.root.deiconify()]).pack(pady = 10)
 
     
