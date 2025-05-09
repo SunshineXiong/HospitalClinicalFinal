@@ -130,10 +130,26 @@ class HospitalUI:
                 for entry in inputs.values():
                     if not entry.get().strip(): 
                         return False 
-                return True
-            
+                return True 
+            def date_checker(date):        
+                try: # Check basic format YYYY-MM-DD
+                    if len(date) == 10 and date[4] == '-' and date[7] == '-':
+                        return True
+                    else:
+                        print("Invalid date format. Please enter the date as YYYY-MM-DD.\n")
+                except ValueError:
+                    return False
+                    
             def submit():
-                check_non_empty_inputs()
+                if not check_non_empty_inputs():
+                    messagebox.showerror("Error", "All fields must be filled.")
+                    return
+
+                visit_date = inputs['Visit_time'].get().strip()
+                if not date_checker(visit_date):
+                    messagebox.showerror("Invalid date", "Visit Time must be in YYYY-MM-DD")
+                    return
+                    
                 try:
                     data = {}                    
                     for entries in info_prompts:
